@@ -66,21 +66,21 @@ public class ZipLibrary {
     }
 
     private static void packZip(File output, List<File> sources) throws IOException {
-        ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(output));
-        zipOut.setLevel(Deflater.DEFAULT_COMPRESSION);
+        try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(output))) {
+            zipOut.setLevel(Deflater.DEFAULT_COMPRESSION);
 
-        for (File source : sources) {
-            if (source.isDirectory()) {
-                zipDir(zipOut, "", source);
+            for (File source : sources) {
+                if (source.isDirectory()) {
+                    zipDir(zipOut, "", source);
+                }
+                else {
+                    zipFile(zipOut, "", source);
+                }
             }
-            else {
-                zipFile(zipOut, "", source);
-            }
+
+            zipOut.flush();
+            mcMMO.p.debug("Backup Completed.");
         }
-
-        zipOut.flush();
-        zipOut.close();
-        mcMMO.p.debug("Backup Completed.");
     }
 
     private static String buildPath(String path, String file) {
@@ -118,15 +118,15 @@ public class ZipLibrary {
 
         zos.putNextEntry(new ZipEntry(buildPath(path, file.getName())));
 
-        FileInputStream fis = new FileInputStream(file);
-        byte[] buffer = new byte[4092];
-        int byteCount;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[4092];
+            int byteCount;
 
-        while ((byteCount = fis.read(buffer)) != -1) {
-            zos.write(buffer, 0, byteCount);
+            while ((byteCount = fis.read(buffer)) != -1) {
+                zos.write(buffer, 0, byteCount);
+            }
         }
 
-        fis.close();
         zos.closeEntry();
     }
 }
